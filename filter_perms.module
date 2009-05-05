@@ -144,7 +144,7 @@ function filter_perms_form_alter(&$form, $form_state, $form_id) {
       }
       else {
         if (in_array($perm_module, $modules)) {
-          $perms[$perm_module][] = $perm['#value'];
+          $perms[$perm_module][$perm_key] = $perm['#value'];
         }
       }
     }
@@ -166,11 +166,11 @@ function filter_perms_form_alter(&$form, $form_state, $form_id) {
       foreach ($perms as $perm_key => $perm) {
         $form['permission'][$perm_index] = array('#value' => $perm_key);
         $perm_index++;
-        foreach ($perms[$perm_key] as $perm_value) {
-          $form['permission'][$perm_value] = array('#value' => $perm_value);
+        foreach ($perms[$perm_key] as $perm_name => $perm_value) {
+          $form['permission'][$perm_name] = array('#value' => $perm_value);
           foreach ($new_roles as $rid => $role) {
             $form['checkboxes'][$rid]['#type'] = 'checkboxes';
-            $form['checkboxes'][$rid]['#options'][$perm_value] = '';
+            $form['checkboxes'][$rid]['#options'][$perm_name] = '';
             $form['checkboxes'][$rid]['#default_value'] = $old_checkboxes[$rid]['#default_value'];
           }
         }
@@ -224,54 +224,4 @@ function filter_perms_user_admin_perm_submit($form, &$form_state) {
 
   // Clear the cached pages
   cache_clear_all();
-}
-
-/**
- * Implementation of hook_theme_registry_alter().
- */
-function filter_perms_theme_registry_alter(&$theme_registry) {
-  $theme_registry['system_admin_by_module']['function'] = 'theme_filter_perms_admin_by_module';
-}
-
-function theme_filter_perms_admin_by_module($menu_items) {
-  $stripe = 0;
-  $output = '';
-  $container = array('left' => '', 'right' => '');
-  $flip = array('left' => 'right', 'right' => 'left');
-  $position = 'left';
-
-  // Iterate over all modules
-  foreach ($menu_items as $module => $block) {
-    list($description, $items) = $block;
-
-    // Output links
-    if (count($items)) {
-      if (isset($items['-1'])) {
-        $items['-1'] = str_replace('#module-', '/', $items['-1']);
-      }
-      $block = array();
-      $block['title'] = $module;
-      $block['content'] = theme('item_list', $items);
-      $block['description'] = t($description);
-
-      if ($block_output = theme('admin_block', $block)) {
-        if (!isset($block['position'])) {
-          // Perform automatic striping.
-          $block['position'] = $position;
-          $position = $flip[$position];
-        }
-        $container[$block['position']] .= $block_output;
-      }
-    }
-  }
-
-  $output = '<div class="admin clear-block">';
-  foreach ($container as $id => $data) {
-    $output .= '<div class="'. $id .' clear-block">';
-    $output .= $data;
-    $output .= '</div>';
-  }
-  $output .= '</div>';
-
-  return $output;
 }
