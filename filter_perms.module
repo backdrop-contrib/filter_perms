@@ -19,14 +19,7 @@ function filter_perms_menu_alter(&$callbacks) {
  * Page callback which appends a filter form to the standard user_admin_perm form.
  */
 function filter_perms_admin_perm($a) {
-  $output = '';
-  if (arg(3)) {
-    $is_module = module_invoke(arg(3), 'perm');
-    $is_role = db_result(db_query("SELECT count(rid) FROM {role} WHERE rid = %d", arg(3)));
-  }
-  if (!arg(3) || (!$is_role && !$is_module)) {
-    $output .= drupal_get_form('filter_perms_admin_perm_filter');
-  }
+  $output = drupal_get_form('filter_perms_admin_perm_filter');
   $output .= drupal_get_form('user_admin_perm');
   return $output;
 }
@@ -85,60 +78,37 @@ function filter_perms_form_alter(&$form, $form_state, $form_id) {
   if ($form_id == 'user_admin_perm') {
     // CSS for floating and sizing the select boxes and submit button.
     drupal_add_css(drupal_get_path('module', 'filter_perms') .'/filter_perms.css');
-    $is_module = FALSE;
-    $is_role = FALSE;
-    if (arg(3)) {
-      $is_module = module_invoke(arg(3), 'perm');
-      $is_role = db_result(db_query("SELECT count(rid) FROM {role} WHERE rid = %d", arg(3)));
-    }
-    if ($is_module) {
-      $modules[arg(3)] = arg(3);
-      $user_roles = user_roles();
-      foreach ($user_roles as $user_role_key => $user_role) {
-        $roles[$user_role_key] = $user_role_key;
-      }
-    }
-    else if($is_role) {
-      $roles[arg(3)] = arg(3);
-      foreach (module_list(FALSE, FALSE, TRUE) as $module) {
-        if (module_invoke($module, 'perm')) {
-          $modules[$module] = $module;
+    if (isset($_SESSION['filter_perm_roles']) && count($_SESSION['filter_perm_roles'])) {
+      $roles = $_SESSION['filter_perm_roles'];
+      // If '--All Roles' is selected, get all roles.
+      if (isset($roles['-1'])) {
+        $user_roles = user_roles();
+        foreach ($user_roles as $user_role_key => $user_role) {
+          $roles[$user_role_key] = $user_role_key;
         }
       }
     }
     else {
-      if (isset($_SESSION['filter_perm_roles']) && count($_SESSION['filter_perm_roles'])) {
-        $roles = $_SESSION['filter_perm_roles'];
-        // If '--All Roles' is selected, get all roles.
-        if (isset($roles['-1'])) {
-          $user_roles = user_roles();
-          foreach ($user_roles as $user_role_key => $user_role) {
-            $roles[$user_role_key] = $user_role_key;
+      // Until the session variable is set, don't display any roles.
+      $roles = array();
+    }
+    if (isset($_SESSION['filter_perm_modules']) && count($_SESSION['filter_perm_modules'])) {
+      $modules = $_SESSION['filter_perm_modules'];
+      // if '--All Modules' is selected, get all modules.
+      if (isset($modules['-1'])) {
+        foreach (module_list(FALSE, FALSE, TRUE) as $module) {
+          if (module_invoke($module, 'perm')) {
+            $modules[$module] = $module;
           }
         }
-      }
-      else {
-        // Until the session variable is set, don't display any roles.
-        $roles = array();
-      }
-      if (isset($_SESSION['filter_perm_modules']) && count($_SESSION['filter_perm_modules'])) {
-        $modules = $_SESSION['filter_perm_modules'];
-        // if '--All Modules' is selected, get all modules.
-        if (isset($modules['-1'])) {
-          foreach (module_list(FALSE, FALSE, TRUE) as $module) {
-            if (module_invoke($module, 'perm')) {
-              $modules[$module] = $module;
-            }
-          }
-        }
-      }
-      else {
-        // Until the session variable is set, don't display any modules.
-        $modules = array();
       }
     }
+    else {
+      // Until the session variable is set, don't display any modules.
+      $modules = array();
+    }
     $perms = array();
-    foreach ($form['permission'] as $perm_key => $perm) {
+   foreach ($form['permission'] as $perm_key => $perm) {
       if (is_numeric($perm_key)) {
         $perm_module = $perm['#value'];
       }
@@ -224,4 +194,54 @@ function filter_perms_user_admin_perm_submit($form, &$form_state) {
 
   // Clear the cached pages
   cache_clear_all();
+}
+
+/**
+ * Implementation of hook_theme_registry_alter().
+ */ 	 
+function filter_perms_theme_registry_alter(&$theme_registry) {
+  $theme_registry['system_admin_by_module']['function'] = 'theme_filter_perms_admin_by_module';
+}
+
+function theme_filter_perms_admin_by_module($menu_items) {
+  $stripe = 0;
+  $output = '';
+  $container = array('left' => '', 'right' => '');
+  $flip = array('left' => 'right', 'right' => 'left');
+  $position = 'left';
+
+  // Iterate over all modules
+  foreach ($menu_items as $module => $block) {
+    list($description, $items) = $block;
+
+    // Output links
+    if (count($items)) {
+      if (isset($items['-1'])) {
+        $items['-1'] = str_replace('#module-', '/', $items['-1']);
+      }
+      $block = array();
+      $block['title'] = $module;
+      $block['content'] = theme('item_list', $items);
+      $block['description'] = t($description);
+
+      if ($block_output = theme('admin_block', $block)) {
+        if (!isset($block['position'])) {
+          // Perform automatic striping.
+          $block['position'] = $position;
+          $position = $flip[$position];
+        }
+        $container[$block['position']] .= $block_output;
+      }
+    }
+  }
+
+  $output = '<div class="admin clear-block">';
+  foreach ($container as $id => $data) {
+    $output .= '<div class="'. $id .' clear-block">';
+    $output .= $data;
+    $output .= '</div>';
+  }
+  $output .= '</div>';
+
+  return $output;
 }
