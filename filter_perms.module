@@ -46,7 +46,18 @@ function filter_perms_admin_perm_filter() {
   );
   $module_options = array();
   foreach (module_list(FALSE, FALSE, TRUE) as $module) {
-    if (module_invoke($module, 'perm')) {
+    if ($module == 'content_permissions') {
+      $module_options[$module] = $module .' (or select individual content types below)';
+      $content_types = node_get_types('types');
+      foreach ($content_types as $content_type) {
+        $content_type_info = content_types($content_type->type);
+        // Only show content types with fields.
+        if (count($content_type_info['fields'])) {
+          $module_options['content_permissions_'. $content_type->type] = '- '. $content_type->name;
+        }
+      }
+    }
+    elseif (module_invoke($module, 'perm')) {
       $module_options[$module] = $module;
     }
   }
@@ -92,8 +103,28 @@ function filter_perms_form_alter(&$form, $form_state, $form_id) {
       // Until the session variable is set, don't display any roles.
       $roles = array();
     }
+    $cp_field_perms = array();
     if (isset($_SESSION['filter_perm_modules']) && count($_SESSION['filter_perm_modules'])) {
       $modules = $_SESSION['filter_perm_modules'];
+      if (!isset($modules['content_permissions']) && module_exists('content_permissions')) {
+        $cp_types = array();
+        // If any content type is chosen under content_permissions, show content_permissions.
+        foreach ($modules as $cp_module) {
+          if (strstr($cp_module, 'content_permissions_')) {
+            $cp_types[] = str_replace('content_permissions_', '', $cp_module);
+          }
+        }
+        if (count($cp_types)) {
+          foreach ($cp_types as $cp_type) {
+            $cp_info = content_types($cp_type);
+            $cp_fields = $cp_info['fields'];
+            foreach ($cp_fields as $cp_field) {
+              $cp_field_perms[] = 'edit '. $cp_field['field_name'];
+              $cp_field_perms[] = 'view '. $cp_field['field_name'];
+            }
+          }
+        }
+      }
       // if '--All Modules' is selected, get all modules.
       if (isset($modules['-1'])) {
         foreach (module_list(FALSE, FALSE, TRUE) as $module) {
@@ -108,12 +139,15 @@ function filter_perms_form_alter(&$form, $form_state, $form_id) {
       $modules = array();
     }
     $perms = array();
-   foreach ($form['permission'] as $perm_key => $perm) {
+    foreach ($form['permission'] as $perm_key => $perm) {
       if (is_numeric($perm_key)) {
         $perm_module = $perm['#value'];
       }
       else {
         if (in_array($perm_module, $modules)) {
+          $perms[$perm_module][$perm_key] = $perm['#value'];
+        }
+        elseif (($perm_module == 'content_permissions' && in_array($perm['#value'], $cp_field_perms))) {
           $perms[$perm_module][$perm_key] = $perm['#value'];
         }
       }
@@ -198,7 +232,7 @@ function filter_perms_user_admin_perm_submit($form, &$form_state) {
 
 /**
  * Implementation of hook_theme_registry_alter().
- */ 	 
+ */
 function filter_perms_theme_registry_alter(&$theme_registry) {
   $theme_registry['system_admin_by_module']['function'] = 'theme_filter_perms_admin_by_module';
 }
