@@ -47,7 +47,7 @@ function filter_perms_admin_perm_filter() {
   $module_options = array();
   foreach (module_list(FALSE, FALSE, TRUE) as $module) {
     if ($module == 'content_permissions') {
-      $module_options[$module] = $module .' (or select individual content types below)';
+      $module_options[$module] = $module .' ('. t('or select individual content types below') .')';
       $content_types = node_get_types('types');
       foreach ($content_types as $content_type) {
         $content_type_info = content_types($content_type->type);
@@ -202,7 +202,7 @@ function filter_perms_user_admin_perm_submit($form, &$form_state) {
       $permissions = array();
       $indexed_perms = array();
       $current_perms = db_result(db_query("SELECT perm FROM {permission} WHERE rid = %d", $role->rid));
-      if (strlen($current_perms)) {
+      if (drupal_strlen($current_perms)) {
         $permissions = explode(', ', $current_perms);
       }
       foreach ($permissions as $permission) {
