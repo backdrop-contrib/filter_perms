@@ -1,4 +1,3 @@
-; $Id$
 name = "Filter Permissions"
 description = "Provides role and module filters for the user permissions page."
 package = Util
