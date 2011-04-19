@@ -1,11 +1,7 @@
-#edit-roles-wrapper {
+.form-type-select {
   float: left;
-  padding-right: 2em;
-}
-#edit-modules-wrapper {
-  float:left;
-  padding-right: 2em;
+  padding-right: 1em;
 }
 #edit-submit {
- margin-top: 11em;
+  margin-top: 8.7em;
 }

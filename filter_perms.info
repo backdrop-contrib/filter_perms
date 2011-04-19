@@ -1,4 +1,4 @@
-name = "Filter Permissions"
-description = "Provides role and module filters for the user permissions page."
-package = Util
-core = 6.x
+name = Filter permissions
+description = Provides role and module filters to simplify the user permissions page.
+package = Administration
+core = 7.x
