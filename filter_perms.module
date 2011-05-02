@@ -86,6 +86,8 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
     // Put some basic info in if filters are not selected.
     $form['permission']['-1'] = array('#markup' => 'Filter Selection', '#id' => 'empty');
     $form['permission']['empty'] = array('#type' => 'item', '#markup' => 'Please select at least one value from both the Roles and Modules select boxes above and then click the "Filter Permissions" button');
+    // Initialize an empty array to avoid warnings in theme function.
+    $form['role_names']['#value'] = array();
     // Remove the Save permissions button when no permissions are present.
     unset($form['actions']['submit']);
   }
@@ -159,4 +161,3 @@ function filter_perms_admin_perm_filter_submit($form, &$form_state) {
   $_SESSION['filter_perm_roles'] = $form_state['values']['roles'];
   $_SESSION['filter_perm_modules'] = $form_state['values']['modules'];
 }
-
