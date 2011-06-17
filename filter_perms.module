@@ -1,10 +1,28 @@
 <?php
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function filter_perms_form_system_modules_alter(&$form, &$form_state, $form_id) {
+  // Replace anchors in links with url paramaters so server side processing can happen.
+  foreach ($form['modules'] as $group_key => $module_group) {
+    if (is_array($module_group)) {
+      $modules = element_children($module_group);
+      foreach ($modules as $key => $module) {
+        if(!empty($form['modules'][$group_key][$module]['links']['permissions']['#options']['fragment'])) {
+          $form['modules'][$group_key][$module]['links']['permissions']['#href'] .= '/'. $form['modules'][$group_key][$module]['links']['permissions']['#options']['fragment'];
+          unset($form['modules'][$group_key][$module]['links']['permissions']['#options']['fragment']);
+        }
+      }
+    }
+  }
+}
 
 /**
  * Implements hook_form_FORM_ID_alter().
  */
 function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $form_id) {
   drupal_add_css(drupal_get_path('module', 'filter_perms') . '/filter_perms.css');
+
   if (isset($_SESSION['filter_perm_roles']) && count($_SESSION['filter_perm_roles'])) {
     $roles = $_SESSION['filter_perm_roles'];
     // If '--All Roles' is selected, get all roles.
@@ -35,6 +53,7 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
     // Until the session variable is set, don't display any modules.
     $modules = array();
   }
+
   $perms = array();
   foreach ($form['permission'] as $perm_key => $perm) {
     if (is_numeric($perm_key)) {
@@ -117,6 +136,32 @@ function filter_perms_admin_perm() {
  * Form providing a multiple select for roles and modules for filtering permissions.
  */
 function filter_perms_admin_perm_filter() {
+  // @todo: Move this handling to a more appropriate place prior to drupal_goto().
+  $url_parts = explode('/', request_uri());
+  $url_last = $url_parts[count($url_parts) - 1];
+  if (is_numeric($url_last)) {
+    // Role Ids will come from role page referral.
+    $_SESSION['filter_perm_roles'] = array($url_last => $url_last);
+    // Show selected role for all modules.
+    foreach (module_list(FALSE, FALSE, TRUE) as $module) {
+      if (module_invoke($module, 'permission')) {
+        $_SESSION['filter_perm_modules'][$module] = $module;
+      }
+    }
+  }
+  elseif (strstr($url_last, 'module-')) {
+    // module- prefix indicates module page referral.
+    $single_module = str_replace('module-', '', $url_last);
+    $_SESSION['filter_perm_modules'] = array($single_module => $single_module);
+    // Show all roles for selected module.
+    $user_roles = user_roles();
+    foreach ($user_roles as $user_role_key => $user_role) {
+      $_SESSION['filter_perm_roles'][$user_role_key] = $user_role_key;
+    }
+  }
+  if ($url_last != 'permissions') {
+    drupal_goto('admin/people/permissions');
+  }
   $form['filters'] = array(
     '#type' => 'fieldset',
     '#title' => t('Permission Filters'),
