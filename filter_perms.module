@@ -159,7 +159,7 @@ function filter_perms_admin_perm_filter() {
       $_SESSION['filter_perm_roles'][$user_role_key] = $user_role_key;
     }
   }
-  if ($url_last != 'permissions') {
+  if ($url_last != 'permissions' && (strpos($url_last, 'permissions?') === FALSE)) {
     drupal_goto('admin/people/permissions');
   }
   $form['filters'] = array(
