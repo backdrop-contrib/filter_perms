@@ -3,14 +3,17 @@
  * Implements hook_form_FORM_ID_alter().
  */
 function filter_perms_form_system_modules_alter(&$form, &$form_state, $form_id) {
-  // Replace anchors in links with url paramaters so server side processing can happen.
-  foreach ($form['modules'] as $group_key => $module_group) {
-    if (is_array($module_group)) {
-      $modules = element_children($module_group);
-      foreach ($modules as $key => $module) {
-        if(!empty($form['modules'][$group_key][$module]['links']['permissions']['#options']['fragment'])) {
-          $form['modules'][$group_key][$module]['links']['permissions']['#href'] .= '/'. $form['modules'][$group_key][$module]['links']['permissions']['#options']['fragment'];
-          unset($form['modules'][$group_key][$module]['links']['permissions']['#options']['fragment']);
+  // Confirmation page for enabling dependencies will also fire this hook.
+  if (isset($form['modules'])) {
+    // Replace anchors in links with url paramaters so server side processing can happen.
+    foreach ($form['modules'] as $group_key => $module_group) {
+      if (is_array($module_group)) {
+        $modules = element_children($module_group);
+        foreach ($modules as $key => $module) {
+          if(!empty($form['modules'][$group_key][$module]['links']['permissions']['#options']['fragment'])) {
+            $form['modules'][$group_key][$module]['links']['permissions']['#href'] .= '/'. $form['modules'][$group_key][$module]['links']['permissions']['#options']['fragment'];
+            unset($form['modules'][$group_key][$module]['links']['permissions']['#options']['fragment']);
+          }
         }
       }
     }
