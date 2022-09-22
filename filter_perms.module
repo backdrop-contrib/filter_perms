@@ -24,7 +24,7 @@ function filter_perms_form_system_modules_alter(&$form, &$form_state, $form_id) 
  * Implements hook_form_FORM_ID_alter().
  */
 function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $form_id) {
-  drupal_add_css(drupal_get_path('module', 'filter_perms') . '/filter_perms.css');
+  backdrop_add_css(backdrop_get_path('module', 'filter_perms') . '/filter_perms.css');
 
   if (isset($_SESSION['filter_perm_roles']) && count($_SESSION['filter_perm_roles'])) {
     $roles = $_SESSION['filter_perm_roles'];
@@ -119,7 +119,7 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
  * Implements hook_menu_alter().
  */
 function filter_perms_menu_alter(&$callbacks) {
-    $callbacks['admin/people/permissions']['page callback'] = 'filter_perms_admin_perm';
+    $callbacks['admin/config/people/permissions']['page callback'] = 'filter_perms_admin_perm';
 }
 
 /**
@@ -127,8 +127,8 @@ function filter_perms_menu_alter(&$callbacks) {
  */
 function filter_perms_admin_perm() {
   $output = array();
-  $output['filter_perms_admin_perm_filter'] = drupal_get_form('filter_perms_admin_perm_filter');
-  $output['user_admin_permissions'] = drupal_get_form('user_admin_permissions');
+  $output['filter_perms_admin_perm_filter'] = backdrop_get_form('filter_perms_admin_perm_filter');
+  $output['user_admin_permissions'] = backdrop_get_form('user_admin_permissions');
   return $output;
 }
 
@@ -136,7 +136,7 @@ function filter_perms_admin_perm() {
  * Form providing a multiple select for roles and modules for filtering permissions.
  */
 function filter_perms_admin_perm_filter() {
-  // @todo: Move this handling to a more appropriate place prior to drupal_goto().
+  // @todo: Move this handling to a more appropriate place prior to backdrop_goto().
   $url_parts = explode('/', request_uri());
   $url_last = $url_parts[count($url_parts) - 1];
   if (is_numeric($url_last)) {
@@ -160,7 +160,7 @@ function filter_perms_admin_perm_filter() {
     }
   }
   if ($url_last != 'permissions' && (strpos($url_last, 'permissions?') === FALSE)) {
-    drupal_goto('admin/people/permissions');
+    backdrop_goto('admin/config/people/permissions');
   }
   $form['filters'] = array(
     '#type' => 'fieldset',

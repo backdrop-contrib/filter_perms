@@ -1,4 +1,6 @@
 name = Filter Permissions
 description = Provides role and module filters to simplify the user permissions page.
 package = Administration
-core = 7.x
+backdrop = 1.x
+type = module
+tags[] = Permissions
