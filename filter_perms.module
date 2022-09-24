@@ -187,6 +187,7 @@ function filter_perms_admin_perm_filter() {
     if (module_invoke($module, 'permission')) {
       $module_info = system_get_info('module',$module);
       $module_options[$module] = $module_info['name'];
+      backdrop_sort($module_options, array('name' => SORT_STRING));
     }
   }
   // Displays all modules which implement hook_permission().
