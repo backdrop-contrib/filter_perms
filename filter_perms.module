@@ -141,7 +141,8 @@ function filter_perms_admin_perm_filter() {
   // @todo: Move this handling to a more appropriate place prior to backdrop_goto().
   $url_parts = explode('/', request_uri());
   $url_last = $url_parts[count($url_parts) - 1];
-  if (is_numeric($url_last)) {
+  $roles = user_roles(FALSE,NULL,FALSE);
+  if (array_key_exists($url_last,$roles)) {
     // Role Ids will come from role page referral.
     $_SESSION['filter_perm_roles'] = array($url_last => $url_last);
     // Show selected role for all modules.
