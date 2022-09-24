@@ -185,7 +185,8 @@ function filter_perms_admin_perm_filter() {
   // TRUE for the 3rd parameter forces name sorting instead of by module weight.
   foreach (module_list(FALSE, FALSE, TRUE) as $module) {
     if (module_invoke($module, 'permission')) {
-      $module_options[$module] = $module;
+      $module_info = system_get_info('module',$module);
+      $module_options[$module] = $module_info['name'];
     }
   }
   // Displays all modules which implement hook_permission().
