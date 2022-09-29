@@ -104,7 +104,14 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
       $form['role_names']['#value'][$new_rid] = $new_role['#markup'];
     }
     $form['role_names']['#type'] = 'value';
-    //No longer need to add a custom submit handler as core appears to handle partial form submits.
+    // No longer need to add a custom submit handler as core appears to handle
+    // partial form submits. But we do need to filter $form['roles'] so that the
+    // core submit handler doesn't try to assign roles that we've filtered out.
+    foreach ($form['roles']['#value'] as $rid => $obj) {
+      if (!isset($new_roles[$rid])) {
+        unset($form['roles']['#value'][$rid]);
+      }
+    }
   }
   else {
     // Put some basic info in if filters are not selected.
