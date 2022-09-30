@@ -3,6 +3,19 @@ Filter Permissions
 Filter Permissions enables you to filter the permission list by role and module 
 to make it easier to find the filter you are looking for.
 
+Sites that have one or more of the following factors may struggle to save the
+permissions form:
+- a large number of modules that have permissions attached
+- a large number of content types
+- a large number of roles
+
+While there are some functions within Backdrop that try to mitigate this, on
+some hosting it may not be possible to adjust (see the [documentation page](https://docs.backdropcms.org/max-input-vars))
+and this module can enable saving of permissions, where it would not otherwise
+be possible to save.
+
+Filter Permissions does this by only saving the visible permissions.
+
 Installation
 ------------
 
