@@ -1,7 +1,7 @@
 Filter Permissions
 ========
 Filter Permissions enables you to filter the permission list by role and module 
-to make it easier to find the filter you are looking for.
+to make it easier to find the permission you are looking for.
 
 Sites that have one or more of the following factors may struggle to save the
 permissions form:
