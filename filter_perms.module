@@ -31,32 +31,37 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
   if (isset($_SESSION['filter_perm_roles']) && count($_SESSION['filter_perm_roles'])) {
     $roles = $_SESSION['filter_perm_roles'];
     // If '--All Roles' is selected, get all roles.
-    if (isset($roles['-1'])) {
-      $user_roles = user_roles();
-      foreach ($user_roles as $user_role_key => $user_role) {
-        $roles[$user_role_key] = $user_role_key;
-      }
-    }
+    $is_all_roles = isset($roles['-1']);
   }
   else {
-    // Until the session variable is set, don't display any roles.
-    $roles = array();
+    // Until the session variable is set, display all roles.
+    $is_all_roles = TRUE;
   }
+  // If '--All Roles' is selected, OR no session variable set, get all roles.
+  if ($is_all_roles) {
+    $user_roles = user_roles();
+    foreach ($user_roles as $user_role_key => $user_role) {
+      $roles[$user_role_key] = $user_role_key;
+    }
+  }
+
   $cp_field_perms = array();
   if (isset($_SESSION['filter_perm_modules']) && count($_SESSION['filter_perm_modules'])) {
     $modules = $_SESSION['filter_perm_modules'];
     // if '--All Modules' is selected, get all modules.
-    if (isset($modules['-1'])) {
-      foreach (module_list(FALSE, FALSE, TRUE) as $module) {
-        if (module_invoke($module, 'permission')) {
-          $modules[$module] = $module;
-        }
-      }
-    }
+    $is_all_modules = isset($modules['-1']);
   }
   else {
-    // Until the session variable is set, don't display any modules.
-    $modules = array();
+    // Until the session variable is set, display all modules.
+    $is_all_modules = TRUE;
+  }
+  // if '--All Modules' is selected, OR no session variable set, get all modules.
+  if ($is_all_modules) {
+    foreach (module_list(FALSE, FALSE, TRUE) as $module) {
+      if (module_invoke($module, 'permission')) {
+        $modules[$module] = $module;
+      }
+    }
   }
 
   $perms = array();
@@ -77,6 +82,11 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
   $form['permission'] = array();
   $form['checkboxes'] = array();
   $form['role_names'] = array();
+
+  // Count number of permissions so we can test against max_input_vars and 
+  // give a warning if the current number of checkboxes will exceed
+  $permission_count = 0;
+
   // If either a role or module is not selected, don't display checkboxes.
   if (count($roles) && count($modules)) {
     $new_roles = array();
@@ -95,10 +105,26 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
           $form['checkboxes'][$rid]['#type'] = 'checkboxes';
           $form['checkboxes'][$rid]['#options'][$perm_name] = '';
           $form['checkboxes'][$rid]['#default_value'] = $old_checkboxes[$rid]['#default_value'];
+          // Increment the permission counter
+          $permission_count++;
         }
       }
       $perm_index++;
     }
+    // Check the number of permission checkboxes against max_input_vars and
+    // show a warning if the number of checkboxes exceeds it.
+    $max_input_vars = (int) ini_get("max_input_vars");
+    if ($permission_count > $max_input_vars) {
+      // Show a message
+      backdrop_set_message(t('The total number of permissions (!count) visible exceeds the limit set by your PHP configuration (!limit) and therefore the form will not save. Apply one or more filters to reduce the number of visible permissions.',
+        array('!count' => number_format($permission_count),
+          '!limit' => number_format($max_input_vars))),
+        'warning', FALSE);
+      // Remove the save permissions button as the save would silently fail if
+      // the user attempted to save.
+      unset($form['actions']['submit']);
+    }
+
     $form['role_names'] = $new_roles;
     foreach ($new_roles as $new_rid => $new_role) {
       $form['role_names']['#value'][$new_rid] = $new_role['#markup'];
@@ -184,7 +210,7 @@ function filter_perms_admin_perm_filter() {
     '#title' => t('Roles to display'),
     '#type' => 'select',
     '#options' => array('-1' => '--All Roles') + $role_options,
-    '#default_value' => isset($_SESSION['filter_perm_roles']) ? $_SESSION['filter_perm_roles'] : '',
+    '#default_value' => isset($_SESSION['filter_perm_roles']) ? $_SESSION['filter_perm_roles'] : '-1',
     '#size' => 8,
     '#multiple' => TRUE,
   );
@@ -202,7 +228,7 @@ function filter_perms_admin_perm_filter() {
     '#title' => t('Modules to display'),
     '#type' => 'select',
     '#options' => array('-1' => '--All Modules') + $module_options,
-    '#default_value' => isset($_SESSION['filter_perm_modules']) ? $_SESSION['filter_perm_modules'] : '',
+    '#default_value' => isset($_SESSION['filter_perm_modules']) ? $_SESSION['filter_perm_modules'] : '-1',
     '#size' => 8,
     '#multiple' => TRUE,
   );
