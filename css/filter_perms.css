@@ -1,0 +1,15 @@
+/**
+ * @file
+ * Minor styling for the filter controls
+ *
+ * Controls the layout of the filter boxes and vertically aligns the button.
+ */
+
+.form-type-select {
+  float: left;
+  padding-right: 1em;
+  margin-right: 1em;
+}
+#edit-submit {
+  margin-top: 3.1em;
+}
