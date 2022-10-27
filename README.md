@@ -14,7 +14,9 @@ some hosting it may not be possible to adjust (see the [documentation page](http
 and this module can enable saving of permissions, where it would not otherwise
 be possible to save.
 
-Filter Permissions does this by only saving the visible permissions.
+Filter Permissions does this by only saving the visible permissions. It will
+also provide a warning and hide the save button if the number of visible
+permissions means that it would not save.
 
 Installation
 ------------

@@ -116,7 +116,7 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
     $max_input_vars = (int) ini_get("max_input_vars");
     if ($permission_count > $max_input_vars) {
       // Show a message
-      backdrop_set_message(t('The total number of permissions (!count) visible exceeds the limit set by your PHP configuration (!limit) and therefore the form will not save. Apply one or more filters to reduce the number of visible permissions.',
+      backdrop_set_message(t('The total number of permissions visible (!count) exceeds the limit set by your PHP configuration (!limit) and therefore the form will not save. Apply one or more filters to reduce the number of visible permissions.',
         array('!count' => number_format($permission_count),
           '!limit' => number_format($max_input_vars))),
         'warning', FALSE);
