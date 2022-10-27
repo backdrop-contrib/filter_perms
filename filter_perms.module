@@ -26,7 +26,7 @@ function filter_perms_form_system_modules_alter(&$form, &$form_state, $form_id) 
  * Implements hook_form_FORM_ID_alter().
  */
 function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $form_id) {
-  backdrop_add_css(backdrop_get_path('module', 'filter_perms') . '/filter_perms.css');
+  backdrop_add_css(backdrop_get_path('module', 'filter_perms') . '/css/filter_perms.css');
 
   if (isset($_SESSION['filter_perm_roles']) && count($_SESSION['filter_perm_roles'])) {
     $roles = $_SESSION['filter_perm_roles'];
