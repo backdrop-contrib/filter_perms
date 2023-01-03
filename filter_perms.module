@@ -1,13 +1,21 @@
 <?php
 /**
- * Implements hook_form_FORM_ID_alter().
+ * @file
+ * Alter exising forms and create new filter form.
+ *
+ */
+
+/**
+ * Implements hook_form_FORM_ID_alter() for system_modules().
+ *
  * Alters the modules form so the permission links for relevant modules will
  * use parameters rather than anchors.
  */
 function filter_perms_form_system_modules_alter(&$form, &$form_state, $form_id) {
   // Confirmation page for enabling dependencies will also fire this hook.
   if (isset($form['modules'])) {
-    // Replace anchors in links with url parameters so server side processing can happen.
+    // Replace anchors in links with url parameters so server side processing
+    // can happen.
     foreach ($form['modules'] as $group_key => $module_group) {
       if (is_array($module_group)) {
         $modules = element_children($module_group);
@@ -23,7 +31,7 @@ function filter_perms_form_system_modules_alter(&$form, &$form_state, $form_id) 
 }
 
 /**
- * Implements hook_form_FORM_ID_alter().
+ * Implements hook_form_FORM_ID_alter() for user_admin_permissions().
  */
 function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $form_id) {
   backdrop_add_css(backdrop_get_path('module', 'filter_perms') . '/css/filter_perms.css');
@@ -48,14 +56,15 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
   $cp_field_perms = array();
   if (isset($_SESSION['filter_perm_modules']) && count($_SESSION['filter_perm_modules'])) {
     $modules = $_SESSION['filter_perm_modules'];
-    // if '--All Modules' is selected, get all modules.
+    // If '--All Modules' is selected, get all modules.
     $is_all_modules = isset($modules['-1']);
   }
   else {
     // Until the session variable is set, display all modules.
     $is_all_modules = TRUE;
   }
-  // if '--All Modules' is selected, OR no session variable set, get all modules.
+  // If '--All Modules' is selected, OR no session variable set, get all
+  // modules.
   if ($is_all_modules) {
     foreach (module_list(FALSE, FALSE, TRUE) as $module) {
       if (module_invoke($module, 'permission')) {
@@ -83,8 +92,8 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
   $form['checkboxes'] = array();
   $form['role_names'] = array();
 
-  // Count number of permissions so we can test against max_input_vars and 
-  // give a warning if the current number of checkboxes will exceed
+  // Count number of permissions so we can test against max_input_vars and
+  // give a warning if the current number of checkboxes will exceed.
   $permission_count = 0;
 
   // If either a role or module is not selected, don't display checkboxes.
@@ -105,7 +114,7 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
           $form['checkboxes'][$rid]['#type'] = 'checkboxes';
           $form['checkboxes'][$rid]['#options'][$perm_name] = '';
           $form['checkboxes'][$rid]['#default_value'] = $old_checkboxes[$rid]['#default_value'];
-          // Increment the permission counter
+          // Increment the permission counter.
           $permission_count++;
         }
       }
@@ -115,7 +124,7 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
     // show a warning if the number of checkboxes exceeds it.
     $max_input_vars = (int) ini_get("max_input_vars");
     if ($permission_count > $max_input_vars) {
-      // Show a message
+      // Show a message advising the user to apply one or more filters.
       backdrop_set_message(t('The total number of permissions visible (!count) exceeds the limit set by your PHP configuration (!limit) and therefore the form will not save. Apply one or more filters to reduce the number of visible permissions.',
         array('!count' => number_format($permission_count),
           '!limit' => number_format($max_input_vars))),
@@ -141,8 +150,14 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
   }
   else {
     // Put some basic info in if filters are not selected.
-    $form['permission']['-1'] = array('#markup' => 'Filter Selection', '#id' => 'empty');
-    $form['permission']['empty'] = array('#type' => 'item', '#markup' => 'Please select at least one value from both the Roles and Modules select boxes above and then click the "Filter Permissions" button');
+    $form['permission']['-1'] = array(
+      '#markup' => 'Filter Selection',
+      '#id' => 'empty',
+    );
+    $form['permission']['empty'] = array(
+      '#type' => 'item',
+      '#markup' => t('Please select at least one value from both the Roles and Modules select boxes above and then click the "Filter Permissions" button'),
+    );
     // Initialize an empty array to avoid warnings in theme function.
     $form['role_names']['#value'] = array();
     // Remove the Save permissions button when no permissions are present.
@@ -158,7 +173,8 @@ function filter_perms_menu_alter(&$callbacks) {
 }
 
 /**
- * Page callback which appends a filter form to the standard user_admin_permissions form.
+ * Page callback which appends a filter form to the standard
+ * user_admin_permissions form.
  */
 function filter_perms_admin_perm() {
   $output = array();
@@ -168,14 +184,15 @@ function filter_perms_admin_perm() {
 }
 
 /**
- * Form providing a multiple select for roles and modules for filtering permissions.
+ * Form providing a multiple select for roles and modules for filtering
+ * permissions.
  */
 function filter_perms_admin_perm_filter() {
   // @todo: Move this handling to a more appropriate place prior to backdrop_goto().
   $url_parts = explode('/', request_uri());
   $url_last = $url_parts[count($url_parts) - 1];
-  $roles = user_roles(FALSE,NULL,FALSE);
-  if (array_key_exists($url_last,$roles)) {
+  $roles = user_roles(FALSE, NULL, FALSE);
+  if (array_key_exists($url_last, $roles)) {
     // Role Ids will come from role page referral.
     $_SESSION['filter_perm_roles'] = array($url_last => $url_last);
     // Show selected role for all modules.
@@ -218,7 +235,7 @@ function filter_perms_admin_perm_filter() {
   // TRUE for the 3rd parameter forces name sorting instead of by module weight.
   foreach (module_list(FALSE, FALSE, TRUE) as $module) {
     if (module_invoke($module, 'permission')) {
-      $module_info = system_get_info('module',$module);
+      $module_info = system_get_info('module', $module);
       $module_options[$module] = $module_info['name'];
       backdrop_sort($module_options, array('name' => SORT_STRING));
     }
@@ -233,7 +250,9 @@ function filter_perms_admin_perm_filter() {
     '#multiple' => TRUE,
   );
 
-  $form['filters']['submit'] = array('#type' => 'submit', '#value' => t('Filter Permissions'));
+  $form['filters']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Filter Permissions'));
   return $form;
 }
 
