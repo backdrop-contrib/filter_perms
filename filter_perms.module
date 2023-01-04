@@ -121,17 +121,35 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
       $perm_index++;
     }
     // Check the number of permission checkboxes against max_input_vars and
-    // show a warning if the number of checkboxes exceeds it.
+    // show a warning and modify the form if the number of checkboxes exceeds
+    // it. Although the point at which max_input_vars will be triggered depends
+    // on how many checkboxes are checked and permissions changed, we can't
+    // know exactly what this will be, so it is safer if we advise filtering
+    // before edit, so edits are not lost if the save fails.
     $max_input_vars = (int) ini_get("max_input_vars");
     if ($permission_count > $max_input_vars) {
       // Show a message advising the user to apply one or more filters.
-      backdrop_set_message(t('The total number of permissions visible (!count) exceeds the limit set by your PHP configuration (!limit) and therefore the form will not save. Apply one or more filters to reduce the number of visible permissions.',
+      backdrop_set_message(t('The total number of permissions visible (!count) exceeds the limit set by your PHP configuration (!limit) and therefore the form may not save. Apply one or more filters to reduce the number of permissions in scope.',
         array('!count' => number_format($permission_count),
           '!limit' => number_format($max_input_vars))),
         'warning', FALSE);
-      // Remove the save permissions button as the save would silently fail if
-      // the user attempted to save.
+      // Remove the save permissions button as the save would fail if the user
+      // attempted to save and exceeded max_input_vars.
       unset($form['actions']['submit']);
+      // Remove the core search filter box as the user should filter using
+      // filter_perms filters first in order for the form to save.
+      unset($form['filter']);
+    }
+    else {
+      // Check to see if all roles and all modules are selected.
+      if ($is_all_modules && $is_all_roles) {
+        // If no filter_perms filter is in use AND max_input_vars is not at
+        // risk of being exceeded, then collapse the Filter Permissions form by
+        // default.
+        backdrop_add_js('$(function() {if ($("#edit-filters").not(".collapsed")) {Backdrop.toggleFieldset($("#edit-filters"));}});', 'inline');
+      }
+      // Add a description to the core search filter.
+      $form['filter']['#description'] = t('This filter does not affect the number of permissions saved.');
     }
 
     $form['role_names'] = $new_roles;
@@ -188,12 +206,14 @@ function filter_perms_admin_perm() {
  * permissions.
  */
 function filter_perms_admin_perm_filter() {
-  // @todo: Move this handling to a more appropriate place prior to backdrop_goto().
+  // Check for parameters in the URL.
   $url_parts = explode('/', request_uri());
   $url_last = $url_parts[count($url_parts) - 1];
+  // Get all defined roles so we can check if a role parameter is given.
   $roles = user_roles(FALSE, NULL, FALSE);
+  // Check if a role parameter exists.
   if (array_key_exists($url_last, $roles)) {
-    // Role Ids will come from role page referral.
+    // Role Ids will come from role page referral so set the session value.
     $_SESSION['filter_perm_roles'] = array($url_last => $url_last);
     // Show selected role for all modules.
     foreach (module_list(FALSE, FALSE, TRUE) as $module) {
@@ -203,8 +223,9 @@ function filter_perms_admin_perm_filter() {
     }
   }
   elseif (strstr($url_last, 'module-')) {
-    // module- prefix indicates module page referral.
+    // 'module-' prefix indicates module page referral.
     $single_module = str_replace('module-', '', $url_last);
+    // Set the session value with the module.
     $_SESSION['filter_perm_modules'] = array($single_module => $single_module);
     // Show all roles for selected module.
     $user_roles = user_roles();
@@ -217,9 +238,10 @@ function filter_perms_admin_perm_filter() {
   }
   $form['filters'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Permission Filters'),
+    '#title' => t('Filter Permissions'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
+    '#description' => t('Filter Permissions will reduce the number of permissions in scope for saving, which can help avoid issues if you have a large number of permissions. The default text search filter (below) can be used to limit permissions displayed but does not change the number of permissions being saved.'),
   );
   $role_options = user_roles();
   // Displays all user roles.
@@ -252,7 +274,7 @@ function filter_perms_admin_perm_filter() {
 
   $form['filters']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Filter Permissions'));
+    '#value' => t('Apply'));
   return $form;
 }
 
