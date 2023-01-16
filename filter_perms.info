@@ -1,6 +1,8 @@
 name = Filter Permissions
-description = Provides role and module filters to simplify the user permissions page.
+description = Provides role and module filters on the user permissions page and allows saving on sites with large numbers of permissions.
 package = Administration
 backdrop = 1.x
 type = module
 tags[] = Permissions
+
+dependencies[] = system (>=1.24.0)
