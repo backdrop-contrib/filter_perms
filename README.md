@@ -21,6 +21,10 @@ Filter Permissions does this by only saving the permissions in scope of the
 filters. It will also provide a warning and hide the save button if the number
 of permissions in scope means that it may not save.
 
+If the number of permissions is not preventing saving but is causing the page
+to take an excessive amount of time to load, then this module can also help
+that by reducing the number being loaded on the page. 
+
 From version 1.24.0, Backdrop includes a text based search filter that acts
 instantly on the page to hide all non-matching permissions.  However, it does
 not remove these permissions from the scope of the save and therefore if your
