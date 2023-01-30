@@ -206,8 +206,15 @@ function filter_perms_admin_perm() {
  * permissions.
  */
 function filter_perms_admin_perm_filter() {
-  // Check for parameters in the URL.
-  $url_parts = explode('/', request_uri());
+  // Retrieve the destination url and parse it into components.
+  $url = backdrop_parse_url(request_uri());
+  $url_path = $url['path'];
+  $url_query = $url['query'];
+  // Check whether any query exists in the url.
+  $url_query_exists = !empty($url_query);
+
+  // Check for parameters in the URL path.
+  $url_parts = explode('/', $url_path);
   $url_last = $url_parts[count($url_parts) - 1];
   // Get all defined roles so we can check if a role parameter is given.
   $roles = user_roles(FALSE, NULL, FALSE);
@@ -233,8 +240,26 @@ function filter_perms_admin_perm_filter() {
       $_SESSION['filter_perm_roles'][$user_role_key] = $user_role_key;
     }
   }
-  if ($url_last != 'permissions' && (strpos($url_last, 'permissions?') === FALSE)) {
-    backdrop_goto('admin/config/people/permissions');
+
+  // If a filter permissions filter has been passed in the URL then we redirect
+  // to the page so filters can be changed.
+  if ($url_last != 'permissions') {
+    // Define the path for permissions page.
+    $revised_destination_path = 'admin/config/people/permissions';
+    // Check whether any queries have been added to the URL.
+    if ($url_query_exists) {
+      // Add the queries to the $options array.
+      $options = array(
+        'query' => $url_query,
+      );
+    }
+    else {
+      // Define the blank $options array.
+      $options = array();
+    }
+    // Redirect to the revised destination with any queries intact.
+    backdrop_goto($revised_destination_path, $options);
+
   }
   $form['filters'] = array(
     '#type' => 'fieldset',
