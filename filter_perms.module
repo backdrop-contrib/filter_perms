@@ -20,7 +20,7 @@ function filter_perms_form_system_modules_alter(&$form, &$form_state, $form_id) 
       if (is_array($module_group)) {
         $modules = element_children($module_group);
         foreach ($modules as $key => $module) {
-          if(!empty($form['modules'][$group_key][$module]['links']['#links']['permissions']['fragment'])) {
+          if (!empty($form['modules'][$group_key][$module]['links']['#links']['permissions']['fragment'])) {
             $form['modules'][$group_key][$module]['links']['#links']['permissions']['href'] .= '/'. $form['modules'][$group_key][$module]['links']['#links']['permissions']['fragment'];
             unset($form['modules'][$group_key][$module]['links']['#links']['permissions']['fragment']);
           }
@@ -308,5 +308,25 @@ function filter_perms_admin_perm_filter() {
  */
 function filter_perms_admin_perm_filter_submit($form, &$form_state) {
   $_SESSION['filter_perm_roles'] = $form_state['values']['roles'];
-  $_SESSION['filter_perm_modules'] = $form_state['values']['modules'];
+
+  // If Administration Bar or System modules has been selected but not the
+  // other we enable the other to allow the permission reminder in core to
+  // operate.
+  $selected_modules = $form_state['values']['modules'];
+  $is_admin_bar = in_array('admin_bar', $selected_modules);
+  $is_system = in_array('system', $selected_modules);
+  $set_message = FALSE;
+  if ($is_admin_bar && !$is_system) {
+    $selected_modules[] = 'system';
+    $set_message = TRUE;
+  }
+  if (!$is_admin_bar && $is_system) {
+    $selected_modules[] = 'admin_bar';
+    $set_message = TRUE;
+  }
+  if ($set_message) {
+    backdrop_set_message(t("Enabling the 'Access administration bar' permission will also require the 'Use the administration pages' permission. Therefore if the Administration Bar module is selected then System module will also be selected and vice versa."),
+      'info');
+  }
+  $_SESSION['filter_perm_modules'] = $selected_modules;
 }
