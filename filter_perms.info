@@ -3,6 +3,9 @@ description = Provides role and module filters on the user permissions page and 
 package = Administration
 backdrop = 1.x
 type = module
+
+maintainers[yorkshire-pudding] = Martin Price
+
 tags[] = Permissions
 
 dependencies[] = system (>=1.24.0)
