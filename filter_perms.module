@@ -54,19 +54,43 @@ function filter_perms_form_user_admin_permissions_alter(&$form, $form_state, $fo
   }
 
   $cp_field_perms = array();
+  $all_module_list = module_list(TRUE, FALSE, TRUE);
   if (isset($_SESSION['filter_perm_modules']) && count($_SESSION['filter_perm_modules'])) {
     $modules = $_SESSION['filter_perm_modules'];
-    // If '--All Modules' is selected, get all modules.
-    $is_all_modules = isset($modules['-1']);
+
+    // Check each module in the SESSION variable list.
+    foreach ($modules as $key => $module) {
+      // Check that the modules in the SESSION variable are still enabled.
+      if (!in_array($module, $all_module_list)) {
+        unset($modules[$key]);
+        unset($_SESSION['filter_perm_modules'][$key]);
+      }
+
+      // Check that the module invokes permissions.
+      if (is_null(module_invoke($module, 'permission'))) {
+        unset($modules[$key]);
+        unset($_SESSION['filter_perm_modules'][$key]);
+      }
+    }
+    // If no valid modules are selected then select all modules.
+    if (count($modules) == 0) {
+      $is_all_modules = TRUE;
+      unset($_SESSION['filter_perm_modules']);
+    }
+    else {
+      // If '--All Modules' is selected, get all modules.
+      $is_all_modules = isset($modules['-1']);
+    }
+
   }
   else {
-    // Until the session variable is set, display all modules.
+    // Until the SESSION variable is set, display all modules.
     $is_all_modules = TRUE;
   }
-  // If '--All Modules' is selected, OR no session variable set, get all
+  // If '--All Modules' is selected, OR no SESSION variable set, get all
   // modules.
   if ($is_all_modules) {
-    foreach (module_list(FALSE, FALSE, TRUE) as $module) {
+    foreach ($all_module_list as $module) {
       if (module_invoke($module, 'permission')) {
         $modules[$module] = $module;
       }
